@@ -36,7 +36,7 @@ graph LR
 - [ ] ESP32 đã cắm nguồn, đèn Power sáng
 - [ ] Webcam USB cắm vào Jetson, hướng xuống luống nấm mô phỏng
 - [ ] Breadboard đã đấu nối đầy đủ: DHT11, Relay, LED xanh, LED đỏ, Còi
-- [ ] Dashboard Web mở sẵn trên trình duyệt máy tính/laptop kết nối cùng Wi-Fi
+- [ ] Dashboard Web mở sẵn trên trình duyệt PC (Flask server đã chạy trên PC tại `http://<pc-ip>:5000`)
 - [ ] Chuẩn bị 2 mẫu nấm mô phỏng: 1 mẫu **nhỏ** và 1 mẫu **lớn**
 
 ### Chuẩn Bị Phần Mềm
@@ -47,9 +47,15 @@ graph LR
 # Terminal 1: Start MQTT Broker
 sudo systemctl start mosquitto
 
-# Terminal 2: Start Backend + Dashboard
+# Terminal 2: Start Backend (thu thập + AI + gửi data tới PC)
 cd ~/jetson_project/backend
-python main.py
+python main_jetson.py
+
+# Trên PC, mở 1 terminal:
+
+# Start Web Dashboard
+cd ~/WEB_IOT
+python backend.py
 ```
 
 ### Chuẩn Bị Mẫu Nấm
@@ -298,7 +304,7 @@ python main.py
 
 | Sự Cố                      | Nguyên Nhân                             | Xử Lý Nhanh                                                |
 | ---------------------------- | ----------------------------------------- | ------------------------------------------------------------ |
-| Dashboard không hiển thị  | Flask chưa chạy hoặc sai IP            | Kiểm tra`python main.py`, dùng `http://localhost:5000` |
+| Dashboard không hiển thị  | Flask trên PC chưa chạy hoặc sai IP PC | Kiểm tra `python backend.py` trên PC, dùng `http://<pc-ip>:5000` |
 | ESP32 không gửi dữ liệu  | Mất kết nối Wi-Fi                      | Reset ESP32 (nhấn nút EN), kiểm tra SSID/password         |
 | AI không trả kết quả     | Ollama chưa start hoặc model chưa load | Chạy`ollama serve` và `ollama run llava`               |
 | LED/Còi không hoạt động | Đấu nối sai hoặc Relay hỏng          | Kiểm tra dây nối, test Relay bằng lệnh GPIO thủ công  |

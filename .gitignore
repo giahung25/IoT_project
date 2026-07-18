@@ -1,0 +1,28 @@
+# Git ignore file for IoT Project
+
+# User data & reports
+data/
+reports/
+WEB_IOT/
+
+# Python virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Application database and local assets
+*.db
+*.sqlite3
+latest.jpg
+backend/latest.jpg
+
+# OS generated files
+.DS_Store
+Thumbs.db

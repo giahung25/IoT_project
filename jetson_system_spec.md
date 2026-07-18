@@ -1,6 +1,6 @@
 # 🖥️ Tài Liệu Cấu Trúc Phần Mềm Edge Server (Jetson Orin Nano)
 
-Tài liệu này đặc tả chi tiết thiết kế phần mềm chạy trên Edge Server (Jetson Orin Nano), tập trung vào hai luồng dữ liệu chính: **Luồng Camera (Camera Stream)** và **Luồng Dữ Liệu cảm biến/điều khiển (Data Stream)**.
+Tài liệu này đặc tả chi tiết thiết kế phần mềm chạy trên Edge Server (Jetson Orin Nano), tập trung vào hai luồng dữ liệu chính: **Luồng Camera (Camera Stream)** và **Luồng Dữ Liệu cảm biến/điều khiển (Data Stream)**. Web Dashboard chạy trên **PC cá nhân** (không chạy trên Jetson) để giảm tải cho thiết bị biên.
 
 ---
 
@@ -16,38 +16,41 @@ graph TB
             Vision_Analyzer["vision_analyzer.py<br/>(Chụp & Phân tích AI)"]
             Decision_Engine["decision_engine.py<br/>(Logic Luật/Cảnh báo)"]
             Actuator_Ctrl["actuator_controller.py<br/>(Gửi lệnh MQTT)"]
+            Data_Sender["data_sender.py<br/>(POST dữ liệu tới PC)"]
         end
 
         subgraph Storage["💾 Lưu Trữ Dữ Liệu"]
-            SQLite_DB["mushroom_monitor.db<br/>(SQLite Database)"]
             Dataset_Folder["📁 dataset/<br/>(Lưu toàn bộ ảnh chụp)"]
         end
+    end
 
+    subgraph PC_Server["💻 PC Cá Nhân (Web Server)"]
         subgraph Web_Server["🌐 Flask Dashboard (Port: 5000)"]
-            Flask_App["app.py<br/>(REST API & Server)"]
+            Flask_App["backend.py<br/>(REST API & Server)"]
             UI_Files["index.html / CSS / JS<br/>(Giao diện điều khiển)"]
         end
+        Data_Store["💾 Lưu trữ In-memory<br/>(current_status + history)"]
     end
 
     ESP32["📡 ESP32 Node"] -->|Gửi dữ liệu nhiệt ẩm| MQTT_Broker
     MQTT_Broker -->|Đọc tin nhắn| MQTT_Handler
-    MQTT_Handler -->|Lưu cảm biến| SQLite_DB
     
     Webcam["📷 Webcam USB"] -->|Chụp ảnh| Vision_Analyzer
     Vision_Analyzer -->|Lưu ảnh vào| Dataset_Folder
     Vision_Analyzer -->|Gửi ảnh phân tích| Ollama["🧠 Ollama API (Moondream)<br/>(Port: 11434)"]
     
     MQTT_Handler -.->|Kích hoạt khi biến động ẩm| Vision_Analyzer
-    Flask_App -->|Yêu cầu chụp ảnh thủ công| Vision_Analyzer
     
     Vision_Analyzer -->|Trả về kích thước nấm| Decision_Engine
-    Decision_Engine -->|Ghi nhật ký thiết bị| SQLite_DB
     Decision_Engine -->|Gửi lệnh điều khiển| Actuator_Ctrl
     Actuator_Ctrl -->|Publish| MQTT_Broker
     MQTT_Broker -->|Gửi lệnh bật/tắt LED/Còi| ESP32
     
-    Flask_App -->|Đọc dữ liệu & Ảnh| SQLite_DB
-    Flask_App -.->|Đọc ảnh mới nhất| Dataset_Folder
+    Decision_Engine -->|Truyền dữ liệu tổng hợp| Data_Sender
+    Data_Sender -->|"HTTP POST /api/update"| Flask_App
+    Flask_App --> Data_Store
+    
+    User["👤 Người dùng"] -->|"HTTP GET :5000"| Flask_App
 ```
 
 ---
@@ -139,7 +142,7 @@ sequenceDiagram
 
 ## 🗄️ 4. Thiết Kế Cơ Sở Dữ Liệu SQLite (`mushroom_monitor.db`)
 
-Dữ liệu được lưu trữ trong một tệp SQLite cục bộ trên Jetson để phục vụ hiển thị lịch sử trên Dashboard và lưu trữ tập dữ liệu hình ảnh.
+Dữ liệu có thể được lưu trữ cục bộ trên Jetson (SQLite) để backup, nhưng dữ liệu chính được POST tới PC Web Server. Dashboard trên PC lưu trữ in-memory (hoặc SQLite riêng trên PC).
 
 ### 4.1 Bảng Dữ Liệu Cảm Biến (`sensor_logs`)
 Lưu trữ lịch sử các chỉ số môi trường do ESP32 gửi về.
@@ -183,33 +186,31 @@ CREATE TABLE device_logs (
 Thư mục dự án trên Jetson (`~/jetson_project`) được cấu trúc mạch lạc như sau:
 
 ```text
-~/jetson_project/
+~/jetson_project/                      # Trên Jetson Orin Nano
 ├── backend/
-│   ├── config.py                 # File chứa tất cả cấu hình cổng, IP, Model, SQLite
-│   ├── database.py               # Module quản lý kết nối, tạo bảng & ghi SQLite
+│   ├── config.py                 # Cấu hình: IP PC, MQTT, Ollama, etc.
+│   ├── database.py               # Module SQLite (backup cục bộ, tùy chọn)
 │   ├── mqtt_handler.py           # Quản lý luồng MQTT (Sub/Pub) & logic sự kiện ẩm
 │   ├── vision_analyzer.py        # Logic chụp webcam (OpenCV) & gọi API Ollama
 │   ├── decision_engine.py        # Định nghĩa luật ra quyết định (Rule Engine)
-│   ├── main.py                   # Tập lệnh điều phối vòng lặp chính của Edge Server
-│   └── requirements.txt          # Các thư viện Python cần cài (opencv-python, paho-mqtt, Flask, requests)
+│   ├── data_sender.py            # POST dữ liệu tổng hợp tới PC Web Server
+│   ├── main_jetson.py            # Điều phối vòng lặp chính (thu thập + AI + gửi PC)
+│   └── requirements.txt          # opencv-python, paho-mqtt, requests
 │
-├── dashboard/
-│   ├── app.py                    # Flask Web Server, cung cấp REST API cho giao diện
-│   ├── templates/
-│   │   └── index.html            # Trang giao diện Dashboard chính
-│   └── static/
-│       ├── css/
-│       │   └── style.css         # Thiết kế giao diện (Dark Mode, layout Responsive)
-│       ├── js/
-│       │   └── dashboard.js      # Thực hiện polling lấy API, vẽ biểu đồ Chart.js, xử lý click chụp ảnh
-│       └── images/
-│           └── latest.jpg        # Ảnh chụp nấm mới nhất (được ghi đè liên tục)
-│
-├── dataset/                      # Thư mục lưu toàn bộ lịch sử ảnh nấm chụp được
+├── dataset/                      # Lưu toàn bộ lịch sử ảnh nấm chụp được
 │   ├── 20260713_120005.jpg
-│   ├── 20260713_120530.jpg
 │   └── ...
 │
-└── database/
-    └── mushroom_monitor.db       # Cơ sở dữ liệu SQLite cục bộ
+└── database/                     # Backup cục bộ (tùy chọn)
+    └── mushroom_monitor.db
+
+# ───────────────────────────────────────────────
+# WEB_IOT/                           # Trên PC Cá Nhân
+# ├── backend.py                     # Flask Web Server (nhận data từ Jetson)
+# ├── dashboard/                     # Frontend tĩnh
+# │   ├── index.html
+# │   ├── css/style.css
+# │   ├── js/dashboard.js, charts.js, gauges.js
+# │   └── assets/
+# └── README.md
 ```

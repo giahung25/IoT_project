@@ -166,7 +166,7 @@ gantt
 ### Công việc
 
 - [ ] **5.1** Thiết kế giao diện Dashboard (mockup/wireframe)
-- [ ] **5.2** Xây dựng Web Server bằng Flask (Python) trên Jetson
+- [ ] **5.2** Xây dựng Web Server bằng Flask (Python) trên **PC cá nhân** (không chạy trên Jetson để giảm tải)
 - [ ] **5.3** Trang chính hiển thị:
   - Nhiệt độ & Độ ẩm hiện tại (cập nhật real-time)
   - Trạng thái AI: Kích thước nấm (`small` / `large`)
@@ -180,10 +180,10 @@ gantt
   - `GET /api/latest-image` — Ảnh chụp gần nhất
 - [ ] **5.7** Kết nối WebSocket (hoặc polling) để cập nhật real-time
 - [ ] **5.8** Responsive design cho cả desktop và mobile
-- [ ] **5.9** Tích hợp Dashboard vào luồng `main.py`
+- [ ] **5.9** Tích hợp gửi dữ liệu từ Jetson tới PC Dashboard (HTTP POST tới `/api/update`)
 
 ### Sản phẩm đầu ra
-- Dashboard truy cập được tại `http://<jetson-ip>:5000`
+- Dashboard truy cập được tại `http://<pc-ip>:5000` (chạy trên PC, không phải Jetson)
 - Hiển thị đầy đủ dữ liệu real-time
 - Giao diện đẹp, chuyên nghiệp
 
@@ -242,7 +242,7 @@ gantt
 | LLM trả về JSON không đúng format | Cao | Implement retry logic, regex parse, fallback rule-based |
 | ESP32 mất kết nối Wi-Fi | Thấp | Auto-reconnect trong firmware, buffer dữ liệu cục bộ |
 | Cảm biến DHT11 sai số lớn | Thấp | Đọc nhiều lần lấy trung bình, hoặc nâng cấp lên DHT22 |
-| Thiếu RAM trên Jetson khi chạy LLM + Web | Trung bình | Tối ưu model quantization, giảm concurrent request |
+| Thiếu RAM trên Jetson khi chạy LLM | Thấp | Web Dashboard đã chuyển sang PC, Jetson chỉ chạy AI + MQTT |
 
 ---
 

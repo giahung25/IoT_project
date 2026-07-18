@@ -16,7 +16,7 @@ Xây dựng một hệ thống hoàn chỉnh kết hợp **IoT (Internet of Thin
 1. **Thu thập** dữ liệu môi trường (nhiệt độ, độ ẩm) và hình ảnh nấm theo thời gian thực.
 2. **Phân tích** hình ảnh nấm bằng mô hình Vision LLM chạy trực tiếp trên thiết bị biên (Jetson Orin Nano), không phụ thuộc internet.
 3. **Ra quyết định** tự động: Bật bơm sương khi môi trường khô, cảnh báo thu hoạch khi nấm đạt kích thước.
-4. **Hiển thị** toàn bộ trạng thái trên Dashboard Web cục bộ.
+4. **Hiển thị** toàn bộ trạng thái trên Dashboard Web chạy trên PC cá nhân, giảm tải cho thiết bị biên.
 
 ### 1.3 Phạm Vi
 - Đây là mô hình **sa bàn mô phỏng** (demo/prototype), không phải hệ thống sản xuất thực tế.
@@ -55,8 +55,11 @@ graph TB
         WEBCAM["📷 Webcam USB"]
         OLLAMA["🧠 Ollama<br/>Vision LLM"]
         BACKEND["🐍 Python Backend<br/>Decision Engine"]
-        DASHBOARD["🌐 Flask Web Server<br/>Dashboard"]
-        DB["💾 SQLite<br/>Lịch sử dữ liệu"]
+    end
+
+    subgraph PC_SERVER["💻 PC Cá Nhân (Web Server)"]
+        DASHBOARD["🌐 Flask Web Server<br/>Dashboard & REST API"]
+        DB["💾 Lưu trữ dữ liệu<br/>(In-memory / SQLite)"]
     end
 
     USER["👤 Người dùng<br/>Trình duyệt Web"]
@@ -74,10 +77,11 @@ graph TB
 
     MQTT --> BACKEND
     BACKEND -->|API Call| OLLAMA
-    BACKEND --> DB
-    BACKEND --> DASHBOARD
     BACKEND -->|"MQTT Publish<br/>actuator/command"| MQTT
     OLLAMA -->|JSON Response| BACKEND
+
+    BACKEND -->|"HTTP POST<br/>/api/update"| DASHBOARD
+    DASHBOARD --> DB
 
     USER -->|"HTTP :5000"| DASHBOARD
 ```
@@ -137,7 +141,7 @@ graph LR
 
 ### 3.2 Edge Server — Jetson Orin Nano
 
-**Vai trò:** Trung tâm xử lý thông minh của toàn hệ thống.
+**Vai trò:** Trung tâm thu thập dữ liệu và xử lý AI tại biên. Jetson chỉ đảm nhận việc thu thập dữ liệu đầu vào (cảm biến, hình ảnh), chạy AI inference, và ra quyết định điều khiển. Web Dashboard được chuyển sang PC cá nhân để giảm tải.
 
 **Thông số kỹ thuật:**
 - CPU: ARM Cortex-A78AE (6 nhân)
@@ -152,8 +156,8 @@ graph LR
 |---|---|---|
 | Mosquitto MQTT Broker | 1883 | Nhận/gửi message MQTT |
 | Ollama API | 11434 | Serving Vision LLM |
-| Flask Web Server | 5000 | Dashboard & REST API |
 | Python Backend | — | Decision Engine, chạy nền |
+| HTTP Client | — | POST dữ liệu tới PC Web Server |
 
 ### 3.3 Vision LLM — Phân Tích Hình Ảnh
 
@@ -219,7 +223,9 @@ sequenceDiagram
 
 ### 3.5 Dashboard Web
 
-**Vai trò:** Giao diện giám sát trực quan cho người dùng.
+**Vai trò:** Giao diện giám sát trực quan cho người dùng, chạy trên **PC cá nhân** (không chạy trên Jetson) để giảm tải cho thiết bị biên.
+
+> **Lưu ý kiến trúc:** Flask Web Server chạy trên PC cá nhân (ví dụ: `http://192.168.1.12:5000`). Jetson sẽ POST dữ liệu tới endpoint `/api/update` trên PC. Dashboard frontend poll `/api/status` để cập nhật giao diện.
 
 **Các thành phần hiển thị:**
 
@@ -242,6 +248,7 @@ sequenceDiagram
 | GET | `/api/latest-image` | Ảnh chụp gần nhất từ camera |
 | GET | `/api/events?limit=50` | Danh sách sự kiện gần nhất |
 | POST | `/api/manual-control` | Điều khiển thủ công (override) |
+| POST | `/api/update` | Nhận dữ liệu từ Jetson (được Jetson gọi) |
 
 ---
 
@@ -279,7 +286,8 @@ sequenceDiagram
 | Giao Thức | Sử Dụng Tại | Đặc Điểm |
 |---|---|---|
 | **MQTT** | ESP32 ↔ Jetson | Lightweight, pub/sub, QoS 1 |
-| **HTTP REST** | Dashboard ↔ Backend | Request/Response, JSON |
+| **HTTP REST** | Dashboard Frontend ↔ PC Flask Backend | Request/Response, JSON |
+| **HTTP REST** | Jetson → PC | Jetson POST dữ liệu tới PC Web Server |
 | **USB** | Webcam → Jetson | Plug & Play, bandwidth cao |
 | **GPIO** | ESP32 ↔ DHT11/Relay | Digital I/O |
 
@@ -306,7 +314,7 @@ flowchart TD
     HARVEST --> SEND
     IDLE --> SEND
 
-    SEND --> UPDATE["📊 Cập nhật Dashboard<br/>& Lưu Database"]
+    SEND --> UPDATE["📤 POST dữ liệu tới PC<br/>Web Dashboard"]
     UPDATE --> LOG["📝 Ghi Log"]
     LOG --> WAIT["⏳ Sleep 30s"]
     WAIT --> START
@@ -331,46 +339,48 @@ flowchart LR
 ## 6. Cấu Trúc Thư Mục Dự Án
 
 ```
-jetson_project/
-├── 📄 01_danh_sach_linh_kien.md         # Danh sách linh kiện (BOM)
-├── 📄 02_ke_hoach_du_an.md              # Kế hoạch thực hiện
-├── 📄 03_mo_ta_du_an.md                 # Mô tả chi tiết (file này)
-├── 📄 04_kich_ban_du_an.md              # Kịch bản demo
+jetson_project/               # Trên Jetson Orin Nano
+├── 📄 01_danh_sach_linh_kien.md
+├── 📄 02_ke_hoach_du_an.md
+├── 📄 03_mo_ta_du_an.md
+├── 📄 04_kich_ban_du_an.md
 │
-├── 📁 firmware/                          # Code cho ESP32
+├── 📁 firmware/
 │   ├── esp32_iot_node/
-│   │   └── esp32_iot_node.ino           # Firmware chính
+│   │   └── esp32_iot_node.ino
 │   └── esp32_cam/
-│       └── esp32_cam.ino                # Firmware ESP32-CAM
+│       └── esp32_cam.ino
 │
-├── 📁 backend/                           # Code Python trên Jetson
-│   ├── main.py                          # Orchestrator chính
-│   ├── mqtt_handler.py                  # Xử lý MQTT
-│   ├── vision_analyzer.py              # Phân tích ảnh AI
-│   ├── decision_engine.py              # Logic ra quyết định
-│   ├── actuator_controller.py          # Gửi lệnh điều khiển
-│   ├── config.py                        # Cấu hình hệ thống
-│   └── requirements.txt                # Dependencies
+├── 📁 backend/                    # Chạy trên Jetson
+│   ├── main_jetson.py             # Orchestrator: thu thập + AI + POST tới PC
+│   ├── mqtt_handler.py
+│   ├── vision_analyzer.py
+│   ├── decision_engine.py
+│   ├── actuator_controller.py
+│   ├── config.py                  # Cấu hình: IP PC, MQTT, Ollama...
+│   └── requirements.txt
 │
-├── 📁 dashboard/                         # Web Dashboard
-│   ├── templates/
-│   │   └── index.html                   # Trang chính
-│   ├── static/
-│   │   ├── css/
-│   │   │   └── style.css
-│   │   └── js/
-│   │       └── dashboard.js
-│   └── app.py                           # Flask web server
+├── 📁 dataset/                    # Lưu ảnh chụp nấm
+│   └── ...
 │
-├── 📁 database/                          # Lưu trữ dữ liệu
-│   └── mushroom_monitor.db             # SQLite database
+└── 📄 README.md
+
+WEB_IOT/                          # Trên PC Cá Nhân
+├── 📁 dashboard/
+│   ├── index.html
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   │   ├── dashboard.js
+│   │   ├── charts.js
+│   │   ├── gauges.js
+│   │   └── mock-data.js
+│   └── assets/
+│       └── mushroom-placeholder.jpg
 │
-├── 📁 docs/                              # Tài liệu bổ sung
-│   ├── wiring_diagram.png              # Sơ đồ đấu nối
-│   ├── architecture.png                # Sơ đồ kiến trúc
-│   └── demo_script.md                  # Script demo
-│
-└── 📄 README.md                          # Hướng dẫn tổng quan
+├── backend.py                     # Flask Web Server (nhận data từ Jetson)
+├── jetson_send_data.py            # Script test gửi data giả lập
+└── README.md
 ```
 
 ---
