@@ -1,0 +1,13 @@
+[Unit]
+Description=USB Serial-MQTT Bridge for ESP32 and Jetson
+After=network.target mosquitto.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 -u /home/jetson/serial_mqtt_bridge.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

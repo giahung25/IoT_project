@@ -22,13 +22,29 @@ PC_WEB_API = f"http://{pc_host}:5000/api/update"
 # ==========================================
 # Cấu hình Vision AI & Camera
 # ==========================================
-# API endpoint của Ollama chạy trên Jetson Orin Nano (truy cập từ PC qua mạng ảo USB)
-OLLAMA_API_URL = "http://192.168.55.1:11434/api/generate"
+# API endpoint của Ollama chạy trên Jetson Orin Nano
+OLLAMA_API_URL = "http://localhost:11434/api/generate"
 # Model Vision siêu nhẹ moondream đã được test ổn định
 VISION_MODEL = "moondream"
 
-# Chỉ số camera (thường 0 là USB Webcam)
+# Chỉ số camera USB (thường 0 là USB Webcam)
 WEBCAM_INDEX = 0
+
+# Cấu hình IP Camera Imou (SN: 88B44BKPSF16A26, User: admin, Safety Code: L201622F)
+# Định dạng chuẩn RTSP Imou/Dahua: rtsp://admin:L201622F@<IP_ADDRESS>:554/cam/realmonitor?channel=1&subtype=0
+ip_cam_ip = os.environ.get("IP_CAM_IP", "192.168.1.5")
+default_imou_rtsp = f"rtsp://admin:L201622F@{ip_cam_ip}:554/cam/realmonitor?channel=1&subtype=0"
+IP_CAM_RTSP_URL = os.environ.get("IP_CAM_URL", default_imou_rtsp)
+
+# Nguồn camera mặc định: "webcam", "ip_cam", hoặc "auto"
+DEFAULT_CAMERA_SOURCE = "webcam"
+
+# Độ phân giải chụp ảnh camera
+CAMERA_WIDTH = 1280
+CAMERA_HEIGHT = 720
+
+# Ngưỡng độ sáng trung bình tối thiểu (0-255). Nếu dưới ngưỡng này, coi như ban đêm/thiếu sáng.
+LOW_LIGHT_THRESHOLD = 30
 
 # ==========================================
 # Lưu trữ dữ liệu
@@ -39,9 +55,14 @@ DB_PATH = os.path.join(BACKEND_DIR, "mushroom_monitor.db")
 # Đường dẫn lưu ảnh chụp gần nhất từ Webcam
 IMAGE_SAVE_PATH = os.path.join(BACKEND_DIR, "latest.jpg")
 
+# Thư mục lưu lịch sử ảnh chụp trên Jetson
+HISTORY_DIR = os.path.join(BACKEND_DIR, "captures")
+
 # ==========================================
 # Chế độ Giả lập / Mocking
 # ==========================================
 # Bật True để giả lập dữ liệu cảm biến (Nhiệt độ & Độ ẩm) khi ESP32 chưa sẵn sàng.
-# Khi ESP32 chạy thật, chuyển giá trị này thành False.
-SIMULATE_SENSOR = True
+# Khi ESP32 chạy thật qua BLE-MQTT Bridge, chuyển giá trị này thành False.
+SIMULATE_SENSOR = False
+
+
