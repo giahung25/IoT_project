@@ -85,6 +85,9 @@ Tệp tin này ghi lại mốc thời gian làm việc của các phiên (sessio
    - Đã staging toàn bộ các thay đổi mới nhất (backend, script monitor, firmware esp32, project_logs) và đẩy thành công lên GitHub repository `giahung25/IoT_project.git`.
    - Cập nhật `.gitignore` loại bỏ các tệp tin tạm, log và ảnh chụp camera `backend/captures/`.
    - Đồng bộ & push mã nguồn Web Dashboard trong `WEB_IOT/` lên repository `locnguyenwtf-boop/WEB_IOT.git`.
+3. **Tạo Nhánh Mới & Push Sang Repository MinhTriTM/IOT:**
+   - Đã thêm remote `upstream` trỏ tới `https://github.com/MinhTriTM/IOT.git`.
+   - Đã tạo & đẩy toàn bộ mã nguồn lên nhánh mới độc lập `feature/edge-ai-iot-monitoring` trên repository `MinhTriTM/IOT.git` mà không làm ảnh hưởng đến nhánh `main` hiện tại của repo.
 
 ### 📌 Ghi chú bàn giao cho AI ở các phiên tiếp theo:
 * **Khi khởi động phiên mới:** AI Agent phải đọc [project_logs/index.md](file:///home/GiaHung/Projects/IoT_project/project_logs/index.md) và [project_logs/issues_and_fixes.md](file:///home/GiaHung/Projects/IoT_project/project_logs/issues_and_fixes.md).
