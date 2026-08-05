@@ -51,7 +51,7 @@ def send_to_firebase(data):
     except Exception as e:
         print(f"[Firebase] ❌ Lỗi kết nối Firebase RTDB: {e}")
 
-def send_status_to_pc(temp, hum, size, pump_status, harvest_alert, conf, esp_online, active_camera="N/A", camera_source="auto"):
+def send_status_to_pc(temp, hum, size, pump_status, harvest_alert, conf, esp_online, active_camera="N/A", camera_source="auto", grow_light=False, cooling_fan=False, vent_gate=False, **kwargs):
     """Gửi dữ liệu trạng thái tổng hợp dạng JSON tới PC Dashboard & Đám Mây Firebase."""
     vpd, vp_sat, vp_act = calculate_vpd(temp, hum)
     zone_info = evaluate_growth_zone(temp, hum, vpd)
@@ -65,6 +65,9 @@ def send_status_to_pc(temp, hum, size, pump_status, harvest_alert, conf, esp_onl
         "mushroom_size": size,
         "pump": pump_status,
         "harvest_alert": harvest_alert,
+        "grow_light": grow_light,
+        "cooling_fan": cooling_fan,
+        "vent_gate": vent_gate,
         "ai_confidence": conf,
         "esp32_online": esp_online,
         "active_camera": active_camera,
@@ -78,6 +81,7 @@ def send_status_to_pc(temp, hum, size, pump_status, harvest_alert, conf, esp_onl
         "health_score": zone_info["health_score"],
         "estimated_harvest_hours": 18 if size == "small" else 0
     }
+
     
     # Mã hóa ảnh camera mới nhất dạng Base64 để hiển thị trực tiếp thời gian thực trên Firebase / Web
     img_b64 = get_image_base64(IMAGE_SAVE_PATH)

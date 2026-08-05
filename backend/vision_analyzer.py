@@ -19,8 +19,10 @@ from backend.config import (
     CAMERA_HEIGHT,
     LOW_LIGHT_THRESHOLD,
     HISTORY_DIR,
-    IMAGE_SAVE_PATH
+    IMAGE_SAVE_PATH,
+    CAMERA_FLIP_MODE
 )
+
 
 def check_image_luminance(image_path_or_frame, threshold=LOW_LIGHT_THRESHOLD):
     """
@@ -117,9 +119,12 @@ def capture_from_webcam(camera_index=WEBCAM_INDEX, save_path=IMAGE_SAVE_PATH):
             cap.release()
 
             if ret and frame is not None:
+                if CAMERA_FLIP_MODE is not None:
+                    frame = cv2.flip(frame, CAMERA_FLIP_MODE)
                 cv2.imwrite(save_path, frame)
-                print(f"[Vision] 🟢 Đã chụp ảnh thành công từ USB Webcam!")
+                print(f"[Vision] 🟢 Đã chụp ảnh thành công từ USB Webcam (Đã lật/xoay khung hình)! ")
                 return True
+
     except Exception as e:
         print(f"[Vision] ⚠️ Lỗi khi mở USB Webcam: {e}")
 

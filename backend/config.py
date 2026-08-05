@@ -39,9 +39,13 @@ IP_CAM_RTSP_URL = os.environ.get("IP_CAM_URL", default_imou_rtsp)
 # Nguồn camera mặc định: "webcam", "ip_cam", hoặc "auto"
 DEFAULT_CAMERA_SOURCE = "webcam"
 
+# Lật/Xoay khung hình camera (-1: Xoay 180° cả trên/dưới và trái/phải, 0: Lật dọc, 1: Lật ngang, None: Giữ nguyên)
+CAMERA_FLIP_MODE = -1
+
 # Độ phân giải chụp ảnh camera
 CAMERA_WIDTH = 1280
 CAMERA_HEIGHT = 720
+
 
 # Ngưỡng độ sáng trung bình tối thiểu (0-255). Nếu dưới ngưỡng này, coi như ban đêm/thiếu sáng.
 LOW_LIGHT_THRESHOLD = 30
