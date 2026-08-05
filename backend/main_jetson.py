@@ -124,10 +124,20 @@ def send_sensor_only_status(temp, hum, esp_online, active_camera="N/A", camera_s
     }
     send_to_firebase(data)
     try:
+        hist_entry = {
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "temperature": temp,
+            "humidity": hum
+        }
+        requests.post("https://agrishroom-edge-default-rtdb.asia-southeast1.firebasedatabase.app/history.json", json=hist_entry, timeout=3)
+    except Exception:
+        pass
+
+    try:
         response = requests.post(PC_WEB_API, json=data, timeout=2)
     except Exception as e:
-        # Im lặng khi không kết nối được để tránh ngập log cảm biến
         pass
+
 
 
 def upload_image_to_pc(image_path):

@@ -115,8 +115,10 @@ Tệp tin này ghi lại mốc thời gian làm việc của các phiên (sessio
    - Đã đồng bộ mã nguồn mới sang Jetson (`rsync`) và kích hoạt lại tiến trình chụp ảnh. Ảnh camera đẩy lên Firebase RTDB & Web Dashboard hiện tại đã được xoay xuôi chuẩn 100%.
 6. **Khắc Phục Lỗi Biểu Đồ Lịch Sử Môi Trường (Chart.js) Không Hiển Thị:**
    - Đã nâng cấp hàm `fetchHistory()` trong [WEB_IOT/dashboard/js/dashboard.js](file:///home/GiaHung/Projects/IoT_project/WEB_IOT/dashboard/js/dashboard.js) hỗ trợ xử lý linh hoạt cả mảng `Array` lẫn đối tượng `Object` từ Firebase RTDB.
-   - Bổ sung luồng ghi nhận điểm dữ liệu thực tế liên tục vào `historyBuffer` và tự động căn chỉnh lại kích thước biểu đồ (`historyChart.resize()`) khi chuyển đổi giữa các Tab Navigation.
-   - Re-deploy bản fix lên Firebase Hosting thành công tại `https://agrishroom-edge.web.app`.
+   - Bổ sung bộ đệm trượt 20 điểm thời gian thực (`historyBuffer`) với định dạng nhãn X-axis chính xác đến từng giây (`HH:mm:ss`), tự động thêm 1 điểm mới và nẩy đường cong mượt mà mỗi 5s.
+   - Bổ sung luồng ghi log tự động từ Jetson (`main_jetson.py`) lên Firebase RTDB `/history.json` mỗi 5 giây.
+   - Re-deploy thành công lên Firebase Hosting tại `https://agrishroom-edge.web.app`.
+
 
 
 5. **Cấu Hình Extension Stitch & Nâng Cấp Giao Diện Frontend (Obsidian Cockpit Redesign):**
