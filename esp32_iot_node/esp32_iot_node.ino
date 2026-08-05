@@ -159,6 +159,8 @@ void processCommandJson(const String& rxValue) {
     Serial.println(fan_state ? "ON" : "OFF");
   }
 
+  // Dành riêng kiểm tra Đèn: Tạm ngắt Servo (GPIO 14) để tập trung 100% kiểm tra Đèn & Rơ-le
+  /*
   if (doc.containsKey("vent_gate")) {
     bool vent_state = doc["vent_gate"];
     if (!ventServo.attached()) {
@@ -171,7 +173,9 @@ void processCommandJson(const String& rxValue) {
     Serial.print("[Servo] Vent Gate (G14) set to: ");
     Serial.println(vent_state ? "OPEN (180°)" : "CLOSED (0°)");
   }
+  */
 }
+
 
 // Xử lý khi nhận dữ liệu từ Jetson qua RX Characteristic (BLE)
 class MyCallbacks: public BLECharacteristicCallbacks {
