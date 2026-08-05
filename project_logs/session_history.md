@@ -106,6 +106,9 @@ Tệp tin này ghi lại mốc thời gian làm việc của các phiên (sessio
    - Đã khôi phục thành công toàn bộ mã nguồn giao diện Web Dashboard nâng cấp từ commit `4675ca9` trong Git Reflog.
    - Sửa lỗi cú pháp SyntaxError ở cuối tệp [WEB_IOT/dashboard/js/dashboard.js](file:///home/GiaHung/Projects/IoT_project/WEB_IOT/dashboard/js/dashboard.js).
    - Kiểm tra bằng `node -c` xác nhận 100% không còn lỗi cú pháp JavaScript.
-3. **Re-deploy Firebase Hosting:**
-   - Đã deploy thành công phiên bản Web Dashboard nâng cấp (Control Center, Công tắc Rơ-le, Cảm biến CO₂, BH1750 Lux, Sơ đồ Pinout ESP32 và Nhật ký VietGAP) lên địa chỉ public: `https://agrishroom-edge.web.app`.
+4. **Kiểm Tra & Kích Hoạt Dịch Vụ Kết Nối Trên Jetson Orin Nano:**
+   - Phát hiện Jetson kết nối Wi-Fi tại địa chỉ IP: `192.168.1.240`.
+   - Đã khởi động và `enable` dịch vụ `ble_mqtt_bridge.service` trên Jetson. Kết nối sóng BLE tới ESP32 thành công (`1C:DB:D4:76:69:2D`).
+   - Đã khởi chạy tiến trình `backend.main_jetson` ngầm. Luồng `Firebase Sync` hoạt động thời gian thực 100%, gửi lệnh Bật/Tắt đèn từ xa tới ESP32 mượt mà.
+
 
