@@ -197,12 +197,10 @@ void setup() {
   digitalWrite(RELAY_FAN, LOW);
   digitalWrite(LED_SAFE_PIN, HIGH); // LED 5 System Safe luôn sáng khi bo mạch OK
 
-  // Cấu hình Servo SG90 Cửa gió (GPIO 14) rồi ngắt xung để dừng quay ngầm
-  ventServo.setPeriodHertz(50);
-  ventServo.attach(SERVO_VENT_PIN, 500, 2400);
-  ventServo.write(0); // 0° Đóng cửa
-  delay(300);
-  ventServo.detach(); // Ngắt xung PWM ngay để dừng motor!
+  // Chân Servo SG90 (GPIO 14) khởi tạo LOW an toàn, không kích xung PWM khi bật nguồn để chống sụt áp
+  pinMode(SERVO_VENT_PIN, OUTPUT);
+  digitalWrite(SERVO_VENT_PIN, LOW);
+
 
   // Kiểm tra xem chân I2C có cắm màn hình OLED hay không
   pinMode(OLED_SDA, INPUT_PULLUP);
