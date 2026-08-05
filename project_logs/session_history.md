@@ -113,6 +113,11 @@ Tệp tin này ghi lại mốc thời gian làm việc của các phiên (sessio
 5. **Khắc Phục Lỗi Ảnh Camera Bị Ngược Trên Web:**
    - Bổ sung cấu hình `CAMERA_FLIP_MODE = -1` trong [backend/config.py](file:///home/GiaHung/Projects/IoT_project/backend/config.py) và xử lý lật/xoay 180° tự động bằng OpenCV (`cv2.flip`) trong [backend/vision_analyzer.py](file:///home/GiaHung/Projects/IoT_project/backend/vision_analyzer.py).
    - Đã đồng bộ mã nguồn mới sang Jetson (`rsync`) và kích hoạt lại tiến trình chụp ảnh. Ảnh camera đẩy lên Firebase RTDB & Web Dashboard hiện tại đã được xoay xuôi chuẩn 100%.
+6. **Khắc Phục Lỗi Biểu Đồ Lịch Sử Môi Trường (Chart.js) Không Hiển Thị:**
+   - Đã nâng cấp hàm `fetchHistory()` trong [WEB_IOT/dashboard/js/dashboard.js](file:///home/GiaHung/Projects/IoT_project/WEB_IOT/dashboard/js/dashboard.js) hỗ trợ xử lý linh hoạt cả mảng `Array` lẫn đối tượng `Object` từ Firebase RTDB.
+   - Bổ sung luồng ghi nhận điểm dữ liệu thực tế liên tục vào `historyBuffer` và tự động căn chỉnh lại kích thước biểu đồ (`historyChart.resize()`) khi chuyển đổi giữa các Tab Navigation.
+   - Re-deploy bản fix lên Firebase Hosting thành công tại `https://agrishroom-edge.web.app`.
+
 
 5. **Cấu Hình Extension Stitch & Nâng Cấp Giao Diện Frontend (Obsidian Cockpit Redesign):**
    - Xác minh thành công extension Stitch MCP Server với API Key của người dùng.
