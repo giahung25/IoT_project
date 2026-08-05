@@ -110,5 +110,16 @@ Tệp tin này ghi lại mốc thời gian làm việc của các phiên (sessio
    - Phát hiện Jetson kết nối Wi-Fi tại địa chỉ IP: `192.168.1.240`.
    - Đã khởi động và `enable` dịch vụ `ble_mqtt_bridge.service` trên Jetson. Kết nối sóng BLE tới ESP32 thành công (`1C:DB:D4:76:69:2D`).
    - Đã khởi chạy tiến trình `backend.main_jetson` ngầm. Luồng `Firebase Sync` hoạt động thời gian thực 100%, gửi lệnh Bật/Tắt đèn từ xa tới ESP32 mượt mà.
+5. **Khắc Phục Lỗi Ảnh Camera Bị Ngược Trên Web:**
+   - Bổ sung cấu hình `CAMERA_FLIP_MODE = -1` trong [backend/config.py](file:///home/GiaHung/Projects/IoT_project/backend/config.py) và xử lý lật/xoay 180° tự động bằng OpenCV (`cv2.flip`) trong [backend/vision_analyzer.py](file:///home/GiaHung/Projects/IoT_project/backend/vision_analyzer.py).
+   - Đã đồng bộ mã nguồn mới sang Jetson (`rsync`) và kích hoạt lại tiến trình chụp ảnh. Ảnh camera đẩy lên Firebase RTDB & Web Dashboard hiện tại đã được xoay xuôi chuẩn 100%.
+
+5. **Cấu Hình Extension Stitch & Nâng Cấp Giao Diện Frontend (Obsidian Cockpit Redesign):**
+   - Xác minh thành công extension Stitch MCP Server với API Key của người dùng.
+   - Tải mẫu giao diện từ dự án Stitch `Obsidian Mushroom Cockpit Control` (`projects/5595911295547133829`).
+   - Tái cấu trúc thành công `WEB_IOT/dashboard/index.html` & `style.css` chuẩn Dark Glassmorphism, bổ sung icon Material Symbols Outlined, typography Outfit & JetBrains Mono, hiệu ứng camera Scanline và bố cục 65/35 Command Center.
+   - Bảo tồn 100% logic JavaScript và mã nguồn backend.
+   - Re-deploy thành công bản nâng cấp lên Firebase Hosting tại `https://agrishroom-edge.web.app`.
+
 
 

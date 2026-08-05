@@ -2,6 +2,20 @@
 
 Tệp tin này ghi lại các sự cố kỹ thuật gặp phải trong quá trình phát triển dự án, nguyên nhân phân tích, câu lệnh cụ thể đã thực thi và kết quả xác minh.
 
+### 📌 [2026-08-05 22:41] Nâng Cấp Giao Diện Web Dashboard Theo Chuẩn Thiết Kế Stitch Obsidian Cockpit
+- **Mô tả công việc:** Tải mẫu HTML/CSS từ màn hình dự án Stitch `Obsidian Mushroom Cockpit Control` (`projects/5595911295547133829`) và tái cấu trúc giao diện `WEB_IOT/dashboard/index.html` & `css/style.css` chuẩn Dark Glassmorphism, phong cách Cockpit điều khiển buồng nấm cao cấp.
+- **Chi Tiết Nâng Cấp:**
+  1. **Frontend UI/UX (`WEB_IOT/dashboard/index.html`):** Áp dụng framework Tailwind CSS CDN, bộ icon Material Symbols Outlined, typography Outfit & JetBrains Mono, bố cục Command Center bất đối xứng (65/35 Split), khung camera hiệu ứng quét Scanline, bảng điều khiển bộ truyền động glassmorphic và cụm thẻ cảm biến đo đạc thời gian thực.
+  2. **Bảo Tồn 100% Backend & Logic JS:** Giữ nguyên toàn bộ các phím DOM ID (`#mushroom-img`, `#ai-confidence`, `#co2-val`, `#light-val`, `#vpd-val`, `#toggle-pump-btn`, `#toggle-vent-btn`, `#vietgap-log-body`), luồng lắng nghe Firebase RTDB, biểu đồ Chart.js và công thức MathJax VPD. KHÔNG làm ảnh hưởng đến mã nguồn backend Jetson/ESP32.
+- **Lệnh đã thực thi:**
+  ```bash
+  for f in WEB_IOT/dashboard/js/*.js; do node -c "$f"; done
+  cd WEB_IOT && firebase deploy --only hosting
+  ```
+- **Kết quả xác minh:** Deploy thành công 100% lên Firebase Hosting tại `https://agrishroom-edge.web.app`. Giao diện hiển thị vô cùng sắc nét, hiện đại, hỗ trợ responsive mượt mà.
+
+---
+
 ### 📌 [2026-08-05 21:49] Khôi Phục Lại Giao Diện Web Dashboard Nâng Cấp Đầy Đủ Theo Yêu Cầu
 - **Mô tả công việc:** Khôi phục toàn bộ giao diện Web Dashboard nâng cấp (Control Center, Các nút công tắc điều khiển Bơm/Quạt/Đèn/Cửa gió, Cảm biến CO₂, BH1750 Lux, Sơ đồ Pinout ESP32 và Nhật ký VietGAP) từ commit `4675ca9` trong Git Reflog.
 - **Sửa Lỗi Kỹ Thuật:** Sửa dấu đóng ngoặc nhọn `}` bị thiếu cuối tệp `dashboard.js` (hàm `updateVietGapLogTable`), kiểm tra cú pháp thành công với Node.js `node -c`.
