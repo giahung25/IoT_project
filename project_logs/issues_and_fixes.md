@@ -2,7 +2,22 @@
 
 Tệp tin này ghi lại các sự cố kỹ thuật gặp phải trong quá trình phát triển dự án, nguyên nhân phân tích, câu lệnh cụ thể đã thực thi và kết quả xác minh.
 
+### 📌 [2026-08-05 21:49] Khôi Phục Lại Giao Diện Web Dashboard Nâng Cấp Đầy Đủ Theo Yêu Cầu
+- **Mô tả công việc:** Khôi phục toàn bộ giao diện Web Dashboard nâng cấp (Control Center, Các nút công tắc điều khiển Bơm/Quạt/Đèn/Cửa gió, Cảm biến CO₂, BH1750 Lux, Sơ đồ Pinout ESP32 và Nhật ký VietGAP) từ commit `4675ca9` trong Git Reflog.
+- **Sửa Lỗi Kỹ Thuật:** Sửa dấu đóng ngoặc nhọn `}` bị thiếu cuối tệp `dashboard.js` (hàm `updateVietGapLogTable`), kiểm tra cú pháp thành công với Node.js `node -c`.
+- **Lệnh đã thực thi:**
+  ```bash
+  cd WEB_IOT
+  git checkout 4675ca9 -- dashboard/index.html dashboard/css/style.css dashboard/js/dashboard.js
+  for f in dashboard/js/*.js; do node -c "$f"; done
+  firebase deploy --only hosting
+  ```
+- **Kết quả xác minh:** Deploy thành công 100% lên Firebase Hosting tại `https://agrishroom-edge.web.app`. Web Dashboard hoạt động mượt mà với 4 Tab điều khiển & theo dõi đầy đủ.
+
+---
+
 ### 📌 [2026-07-31 01:06] Khôi Phục (Rollback) Mã Nguồn Ổn Định Theo Yêu Cầu Người Dùng
+
 - **Mô tả công việc:** Đã hủy bỏ Núm xoay 360° phức tạp, khôi phục toàn bộ mã nguồn Firmware ESP32 và Web Dashboard về phiên bản ổn định, đơn giản và chuẩn xác ban đầu.
 - **Chi Tiết Khôi Phục:**
   1. **Firmware ESP32 (`esp32_iot_node.ino`):** Loại bỏ thư viện `Preferences.h`, đưa logic điều khiển Servo SG90 về lại dạng nút ấn đơn giản `vent_gate` (ON: Mở 180° / OFF: Đóng 0°) kết hợp cơ chế ngắt xung `ventServo.detach()` sau 0.6s để dừng motor 100% chống rên và chống sụt áp.

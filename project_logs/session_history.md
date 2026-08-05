@@ -94,3 +94,18 @@ Tệp tin này ghi lại mốc thời gian làm việc của các phiên (sessio
 * **Trạng thái Jetson hiện tại:** Tiến trình `backend.main_jetson` và dịch vụ `ble_mqtt_bridge.service` đang chạy ngầm 24/7 trên Jetson. Hệ thống hỗ trợ trọn bộ cụm cảm biến (DHT22/11 + MQ-135 + BH1750) truyền dữ liệu qua sóng BLE không dây (`27.4 °C`, `63.9 %`, `460 ppm`, `150 Lux`), chỉ số VPD (`1.31 kPa`), kết quả AI (`small 83% conf`) và hình ảnh camera Base64 được chụp & đồng bộ định kỳ 30s lên Firebase RTDB.
 * **Đường dẫn Web Public:** `https://agrishroom-edge.web.app`
 * **Khởi chạy Dashboard trên PC Local:** Sử dụng `./run_dashboard.sh` hoặc `python3 monitor_sensors.py`.
+
+---
+
+## 📅 Phiên làm việc: 05/08/2026
+
+### 📋 Công việc thực hiện trong phiên:
+1. **Rà Soát & Giải Đáp Thắc Mắc Về Giao Diện Web Dashboard:**
+   - Xác minh trạng thái mã nguồn Web Dashboard trong `WEB_IOT/dashboard` và giải đáp thắc mắc người dùng về lịch sử phiên bản.
+2. **Khôi Phục Giao Diện Web Nâng Cấp Đầy Đủ (Restore Full-Featured Dashboard):**
+   - Đã khôi phục thành công toàn bộ mã nguồn giao diện Web Dashboard nâng cấp từ commit `4675ca9` trong Git Reflog.
+   - Sửa lỗi cú pháp SyntaxError ở cuối tệp [WEB_IOT/dashboard/js/dashboard.js](file:///home/GiaHung/Projects/IoT_project/WEB_IOT/dashboard/js/dashboard.js).
+   - Kiểm tra bằng `node -c` xác nhận 100% không còn lỗi cú pháp JavaScript.
+3. **Re-deploy Firebase Hosting:**
+   - Đã deploy thành công phiên bản Web Dashboard nâng cấp (Control Center, Công tắc Rơ-le, Cảm biến CO₂, BH1750 Lux, Sơ đồ Pinout ESP32 và Nhật ký VietGAP) lên địa chỉ public: `https://agrishroom-edge.web.app`.
+
