@@ -128,5 +128,16 @@ Tệp tin này ghi lại mốc thời gian làm việc của các phiên (sessio
    - Bảo tồn 100% logic JavaScript và mã nguồn backend.
    - Re-deploy thành công bản nâng cấp lên Firebase Hosting tại `https://agrishroom-edge.web.app`.
 
+---
 
+## 📅 Phiên làm việc: 06/08/2026
 
+### 📋 Công việc thực hiện trong phiên:
+1. **Kiểm Tra Thư Mục GUI & Rà Soát Mã Nguồn:**
+   - Hướng dẫn và giải thích cấu trúc thư mục GUI `WEB_IOT/dashboard/` và các đường dẫn công khai.
+2. **Fork & Đồng Bộ Đẩy Mã Nguồn Web Dashboard Lên GitHub (`giahung25/WEB_IOT`):**
+   - Tạo Fork repository `giahung25/WEB_IOT` từ `locnguyenwtf-boop/WEB_IOT.git`.
+   - Cập nhật remote `origin` trỏ về `https://github.com/giahung25/WEB_IOT.git`.
+   - Đẩy 2 commit mới nhất (mã nguồn nâng cấp giao diện Web Dashboard Obsidian Glassmorphic Cockpit) lên GitHub thành công.
+3. **Đồng Bộ Repository Chính (`giahung25/IoT_project` & `MinhTriTM/IOT`):**
+   - Xác minh branch `main` trên `giahung25/IoT_project.git` và branch `feature/edge-ai-iot-monitoring` trên `MinhTriTM/IOT.git` đã đồng bộ hoàn toàn 100%.
