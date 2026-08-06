@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html class="dark" lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Dashboard giám sát sinh trưởng nấm theo thời gian thực — Edge AI & IoT System" />
+  <title>🌿 AgriShroom Edge — MYCO-LOGIC COCKPIT</title>
+
+  <!-- Tailwind CSS CDN with Custom Theme Config -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#10b981",
+            "primary-bright": "#4edea3",
+            "primary-container": "#00422b",
+            "surface": "#051424",
+            "surface-container": "#122131",
+            "surface-container-low": "#0d1c2d",
+            "surface-container-high": "#1c2b3c",
+            "on-surface": "#d4e4fa",
+            "on-surface-variant": "#bbcabf",
+            "outline": "#86948a",
+            "warning": "#f59e0b",
+            "danger": "#ef4444",
+            "info": "#38bdf8"
+          },
+          fontFamily: {
+            "main": ["Outfit", "Inter", "sans-serif"],
+            "mono": ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- MathJax for rendering LaTeX formulas -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Stylesheet with Cache-Buster -->
+  <link rel="stylesheet" href="css/style.css?v=14.0" />
+</head>
+
+<body class="min-h-screen font-main text-on-surface bg-[#090D16] overflow-x-hidden selection:bg-primary/30 selection:text-primary">
+
+  <!-- ======================================================
+       ALERT BANNER — Hiển thị khi harvest_alert = true
+       ====================================================== -->
+  <div id="alert-banner" class="hidden" role="alert" aria-live="assertive">
+    🚨&nbsp;&nbsp;CẢNH BÁO THU HOẠCH — NẤM ĐÃ ĐẠT KÍCH THƯỚC LỚN (HARVEST READY)!&nbsp;&nbsp;🚨
+    <button id="alert-close" aria-label="Đóng cảnh báo">✕</button>
+  </div>
+
+  <!-- ======================================================
+       HEADER & NAVIGATION TABS
+       ====================================================== -->
+  <header id="main-header" class="bg-surface/70 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50 px-4 md:px-8 py-3 flex flex-wrap justify-between items-center gap-4">
+    <div class="flex items-center gap-4 md:gap-8">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl" aria-hidden="true">🌿</span>
+        <div>
+          <h1 class="font-bold text-lg md:text-xl tracking-tight text-white flex items-center gap-2">
+            AgriShroom Edge <span class="text-xs font-mono px-2 py-0.5 rounded bg-primary/20 text-primary border border-primary/30 hidden sm:inline-block">MYCO-LOGIC COCKPIT</span>
+          </h1>
+          <div class="text-xs text-on-surface-variant hidden sm:block">Smart Mushroom AI &amp; IoT System · Jetson Orin Nano</div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="header-nav-tabs flex items-center gap-2" aria-label="Chuyển đổi giao diện">
+        <button class="nav-tab-btn active px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-1.5 transition-all" data-tab="tab-monitoring">
+          <span class="material-symbols-outlined text-[18px]">videocam</span> Control Center
+        </button>
+        <button class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-1.5 transition-all" data-tab="tab-analytics">
+          <span class="material-symbols-outlined text-[18px]">analytics</span> Phân Tích Nhiệt - Ẩm
+        </button>
+        <button class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-1.5 transition-all" data-tab="tab-nodes">
+          <span class="material-symbols-outlined text-[18px]">memory</span> Sơ Đồ ESP32 &amp; Node
+        </button>
+        <button class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-1.5 transition-all" data-tab="tab-logs">
+          <span class="material-symbols-outlined text-[18px]">history</span> Nhật Ký VietGAP
+        </button>
+      </nav>
+    </div>
+
+    <div class="header-right flex items-center gap-3 ml-auto">
+      <!-- Mode Badge Toggle -->
+      <button class="mode-badge-btn px-2.5 py-1 rounded-md text-xs font-mono flex items-center gap-1.5 bg-surface-container border border-white/10 hover:border-primary/40 transition-colors" id="mode-badge" title="Bấm để chuyển giữa THỰC TẾ và GIẢ LẬP">
+        <span class="badge-dot" id="mode-dot"></span>
+        <span id="mode-text">⚡ THỰC TẾ (Real Hardware)</span>
+      </button>
+
+      <!-- ESP32 Status -->
+      <div class="esp32-status text-xs font-mono px-2.5 py-1 rounded-md bg-surface-container border border-white/10 flex items-center gap-1.5" aria-label="Trạng thái ESP32">
+        <span class="status-dot dot-on" id="esp32-dot" aria-hidden="true"></span>
+        <span id="esp32-status">ESP32 Online</span>
+      </div>
+
+      <!-- Live Clock -->
+      <div class="header-clock font-mono text-xs font-bold text-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20" id="header-clock" aria-label="Thời gian hiện tại">00:00:00</div>
+    </div>
+  </header>
+
+  <!-- ======================================================
+       MAIN CONTENT CONTAINER
+       ====================================================== -->
+  <main id="main-container" class="p-3 md:p-6 max-w-[1680px] mx-auto">
+
+    <!-- ======================================================
+         TAB 1: CONTROL CENTER & LIVE MONITORING
+         ====================================================== -->
+    <div id="tab-monitoring" class="tab-content active">
+      <div id="command-center-layout" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT COLUMN — LIVE VISION FEED & ANALYTICS (65%) -->
+        <div class="layout-column column-main lg:col-span-8 flex flex-col gap-6">
+
+          <!-- CARD 1: LIVE CAMERA & VISION AI FEED -->
+          <div class="card glass-panel rounded-xl overflow-hidden relative group p-4 md:p-5" id="camera-card">
+            <div class="card-header flex justify-between items-center mb-3">
+              <div class="card-title font-bold text-base md:text-lg flex items-center gap-2 text-white">
+                <span class="material-symbols-outlined text-primary text-xl">videocam</span>
+                Camera Live Feed &amp; Phân Tích Vision AI
+              </div>
+              <div class="cam-badges flex items-center gap-2 flex-wrap">
+                <select id="cam-source-select" aria-label="Chọn nguồn camera" class="bg-surface-container text-white border border-white/15 rounded-md px-2 py-1 text-xs font-mono font-semibold cursor-pointer outline-none">
+                  <option value="auto">🔄 Auto (IP → USB)</option>
+                  <option value="ip_cam">🌐 IP Camera (RTSP)</option>
+                  <option value="webcam">📷 USB Webcam</option>
+                </select>
+                <button id="trigger-capture-btn" aria-label="Kích hoạt chụp thủ công" class="bg-primary hover:bg-primary-bright text-on-primary font-bold rounded-md px-2.5 py-1 text-xs transition-all shadow-[0_0_12px_rgba(16,185,129,0.3)]">
+                  📸 Chụp &amp; Phân Tích
+                </button>
+                <span id="active-cam-badge" class="badge-tag text-xs px-2 py-1 rounded bg-white/5 border border-white/10 text-on-surface-variant font-mono">📷 Nguồn: Auto</span>
+                <span class="cam-live-badge text-xs px-2 py-0.5 rounded font-mono font-bold bg-danger/20 text-danger border border-danger/40 flex items-center gap-1" id="cam-live-badge">
+                  <span class="w-1.5 h-1.5 rounded-full live-dot"></span> ● LIVE
+                </span>
+              </div>
+            </div>
+
+            <!-- Camera Frame Viewport -->
+            <div class="camera-viewport relative aspect-video bg-black rounded-lg overflow-hidden border border-white/10">
+              <img
+                id="mushroom-img"
+                src="assets/mushroom-placeholder.jpg"
+                alt="Hình ảnh nấm từ camera"
+                class="w-full h-full object-cover"
+                loading="lazy"
+              />
+
+              <!-- Scanline Scanner Overlay Effect -->
+              <div class="absolute inset-0 pointer-events-none border border-primary/20 z-10">
+                <div class="absolute top-0 left-0 w-full h-[2px] bg-primary shadow-[0_0_10px_#10b981] scanline-effect opacity-75"></div>
+              </div>
+
+              <div class="viewport-overlay absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex justify-between items-center z-20">
+                <div class="overlay-left">
+                  <span class="cam-ai-label text-xs font-mono text-white/90 bg-black/60 px-2 py-1 rounded border border-white/15" id="cam-ai-label">AI: Đang phân tích sinh trưởng...</span>
+                </div>
+                <div class="overlay-right">
+                  <button id="back-to-live-btn" class="back-to-live-btn hidden text-xs font-mono bg-primary/20 text-primary border border-primary/40 px-2.5 py-1 rounded hover:bg-primary/30">↩ Quay lại Live</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Growth Stage Footer Banner -->
+            <div class="ai-growth-banner mt-3 p-3 rounded-lg bg-surface-container/80 border border-white/10 flex justify-between items-center" id="ai-growth-banner">
+              <div class="growth-banner-left flex items-center gap-3">
+                <span class="growth-icon text-2xl" id="ai-icon">🌱</span>
+                <div>
+                  <div class="growth-status-label font-bold text-sm text-primary" id="ai-size-badge">🌱 NHỎ — Đang phát triển</div>
+                  <div class="growth-meta text-xs text-on-surface-variant font-mono">Model: <strong class="text-white">moondream</strong> (Ollama Edge Server)</div>
+                </div>
+              </div>
+              <div class="growth-banner-right text-right">
+                <div class="confidence-label text-xs text-on-surface-variant font-mono">Độ chính xác AI</div>
+                <div class="confidence-value font-mono text-lg font-bold text-primary" id="ai-confidence">--%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 2: ENVIRONMENT TREND CHART -->
+          <div class="card glass-panel rounded-xl p-4 md:p-5" id="history-chart-card">
+            <div class="card-header flex justify-between items-center mb-3">
+              <div class="card-title font-bold text-base md:text-lg flex items-center gap-2 text-white">
+                <span class="material-symbols-outlined text-info text-xl">analytics</span>
+                Biểu Đồ Lịch Sử Môi Trường (4 Giờ Qua)
+              </div>
+            </div>
+            <div class="chart-wrap relative w-full h-[280px]">
+              <canvas id="history-chart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN — SENSORS, ACTUATORS & LOGS (35%) -->
+        <div class="layout-column column-side lg:col-span-4 flex flex-col gap-6">
+
+          <!-- CARD 3: FULL SENSOR SUITE -->
+          <div class="card glass-panel rounded-xl p-4 md:p-5" id="gauges-card">
+            <div class="card-header flex justify-between items-center mb-4">
+              <div class="card-title font-bold text-base flex items-center gap-2 text-white">
+                <span class="material-symbols-outlined text-primary text-xl">speed</span>
+                Cụm Cảm Biến Real-time
+              </div>
+              <span id="sensor-source-badge" class="badge-tag font-mono text-xs px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30">📍 DHT22 (G4)</span>
+            </div>
+
+            <!-- Dual Circular Gauges -->
+            <div class="gauges-flex grid grid-cols-2 gap-3 mb-4">
+              <!-- Temp Gauge -->
+              <div class="gauge-item p-3 rounded-lg bg-surface-container-low/60 border border-white/5 text-center" id="temp-card">
+                <div class="gauge-item-title text-xs font-mono text-on-surface-variant font-semibold mb-1">Nhiệt Độ (°C)</div>
+                <svg id="temp-svg" class="mx-auto my-1"></svg>
+                <div class="gauge-threshold text-[10px] font-mono text-on-surface-variant">Bơm khi &gt; 35°C</div>
+              </div>
+
+              <!-- Humidity Gauge -->
+              <div class="gauge-item p-3 rounded-lg bg-surface-container-low/60 border border-white/5 text-center" id="hum-card">
+                <div class="gauge-item-title text-xs font-mono text-on-surface-variant font-semibold mb-1">Độ Ẩm (%)</div>
+                <svg id="hum-svg" class="mx-auto my-1"></svg>
+                <div class="gauge-threshold text-[10px] font-mono text-on-surface-variant">Bơm khi &lt; 70%</div>
+              </div>
+            </div>
+
+            <!-- Extra Sensors: CO2, Light Lux & VPD -->
+            <div class="sensor-extra-grid grid grid-cols-3 gap-2">
+              <!-- CO2 MQ-135 Widget -->
+              <div class="mini-sensor-card p-2.5 rounded-lg bg-surface-container-low/60 border border-white/10 text-center transition-all hover:border-primary/40" id="co2-card">
+                <div class="text-[11px] text-on-surface-variant flex items-center justify-center gap-1 font-mono">
+                  <span>💨</span> <span>CO₂ (MQ-135)</span>
+                </div>
+                <div id="co2-val" class="font-mono font-extrabold text-base md:text-lg text-primary my-1">460 <span class="text-xs font-normal">ppm</span></div>
+                <div id="co2-badge" class="mini-status-badge text-[10px] font-mono py-0.5 px-1 rounded bg-primary/15 text-primary">🟢 Tốt</div>
+              </div>
+
+              <!-- BH1750 Light Lux Widget -->
+              <div class="mini-sensor-card p-2.5 rounded-lg bg-surface-container-low/60 border border-white/10 text-center transition-all hover:border-warning/40" id="light-card">
+                <div class="text-[11px] text-on-surface-variant flex items-center justify-center gap-1 font-mono">
+                  <span>☀️</span> <span>Ánh Sáng</span>
+                </div>
+                <div id="light-val" class="font-mono font-extrabold text-base md:text-lg text-warning my-1">150 <span class="text-xs font-normal">Lux</span></div>
+                <div id="light-badge" class="mini-status-badge text-[10px] font-mono py-0.5 px-1 rounded bg-warning/15 text-warning">☀️ Tốt</div>
+              </div>
+
+              <!-- VPD Growth Zone Widget -->
+              <div class="mini-sensor-card p-2.5 rounded-lg bg-surface-container-low/60 border border-white/10 text-center transition-all hover:border-info/40" id="vpd-card">
+                <div class="text-[11px] text-on-surface-variant flex items-center justify-center gap-1 font-mono">
+                  <span>📈</span> <span>VPD</span>
+                </div>
+                <div id="vpd-val" class="font-mono font-extrabold text-base md:text-lg text-info my-1">1.34 <span class="text-xs font-normal">kPa</span></div>
+                <div id="vpd-badge" class="mini-status-badge text-[10px] font-mono py-0.5 px-1 rounded bg-info/15 text-info">🔵 Khô Hạn</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 4: ACTUATORS CONTROL & SWITCHES -->
+          <div class="card glass-panel rounded-xl p-4 md:p-5" id="devices-card">
+            <div class="card-header flex justify-between items-center mb-3">
+              <div class="card-title font-bold text-base flex items-center gap-2 text-white">
+                <span class="material-symbols-outlined text-warning text-xl">touch_app</span>
+                Điều Khiển Bộ Truyền Động
+              </div>
+            </div>
+
+            <div class="devices-stack flex flex-col gap-2.5">
+              <!-- Relay 1 / LED 1: Fogging Pump (GPIO 15) -->
+              <div class="device-row p-2.5 rounded-lg bg-surface-container-low/50 border border-white/5 flex items-center justify-between" id="pump-row">
+                <div class="device-info flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-info text-xl">water_drop</span>
+                  <div>
+                    <div class="device-name font-bold text-xs text-white">Phun Sương (GPIO 15)</div>
+                    <div class="device-desc text-[10px] text-on-surface-variant font-mono">Relay 1 · Bật khi RH &lt; 80%</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="toggle-pump-btn" class="actuator-btn btn-actuator-stitch px-2.5 py-1 rounded text-xs font-bold text-primary border border-primary/40 bg-primary/10">Bật / Tắt</button>
+                  <div class="device-indicator flex items-center gap-1 font-mono text-xs">
+                    <span class="device-dot dot-off w-2 h-2 rounded-full bg-slate-500" id="pump-dot"></span>
+                    <span class="device-state state-off text-on-surface-variant font-bold" id="pump-label">TẮT</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Relay 2 / LED 2: Alarm Buzzer (GPIO 16) -->
+              <div class="device-row p-2.5 rounded-lg bg-surface-container-low/50 border border-white/5 flex items-center justify-between" id="alert-row">
+                <div class="device-info flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-danger text-xl">notifications</span>
+                  <div>
+                    <div class="device-name font-bold text-xs text-white">Cảnh Báo Còi (GPIO 16)</div>
+                    <div class="device-desc text-[10px] text-on-surface-variant font-mono">Relay 2 · CO₂ &gt; 1000ppm / Nấm Lớn</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="toggle-alert-btn" class="actuator-btn btn-actuator-stitch px-2.5 py-1 rounded text-xs font-bold text-danger border border-danger/40 bg-danger/10">Test Cảnh Báo</button>
+                  <div class="device-indicator flex items-center gap-1 font-mono text-xs">
+                    <span class="device-dot dot-off w-2 h-2 rounded-full bg-slate-500" id="alert-dot"></span>
+                    <span class="device-state state-off text-on-surface-variant font-bold" id="alert-label">OK</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Relay 3 / LED 3: Grow Light (GPIO 17) -->
+              <div class="device-row p-2.5 rounded-lg bg-surface-container-low/50 border border-white/5 flex items-center justify-between" id="light-relay-row">
+                <div class="device-info flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-warning text-xl">lightbulb</span>
+                  <div>
+                    <div class="device-name font-bold text-xs text-white">Đèn Quang Hợp (GPIO 17)</div>
+                    <div class="device-desc text-[10px] text-on-surface-variant font-mono">Relay 3 · Bật khi Lux &lt; 400</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="toggle-light-btn" class="actuator-btn btn-actuator-stitch px-2.5 py-1 rounded text-xs font-bold text-warning border border-warning/40 bg-warning/10">Bật / Tắt</button>
+                  <div class="device-indicator flex items-center gap-1 font-mono text-xs">
+                    <span class="device-dot dot-off w-2 h-2 rounded-full bg-slate-500" id="light-dot"></span>
+                    <span class="device-state state-off text-on-surface-variant font-bold" id="light-label">TẮT</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Relay 4 / LED 4: Cooling Fan (GPIO 18) -->
+              <div class="device-row p-2.5 rounded-lg bg-surface-container-low/50 border border-white/5 flex items-center justify-between" id="fan-row">
+                <div class="device-info flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-purple-400 text-xl">mode_fan</span>
+                  <div>
+                    <div class="device-name font-bold text-xs text-white">Quạt Mát (GPIO 18)</div>
+                    <div class="device-desc text-[10px] text-on-surface-variant font-mono">Relay 4 · Bật khi Nhiệt &gt; 31°C</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="toggle-fan-btn" class="actuator-btn btn-actuator-stitch px-2.5 py-1 rounded text-xs font-bold text-purple-300 border border-purple-400/40 bg-purple-500/10">Bật / Tắt</button>
+                  <div class="device-indicator flex items-center gap-1 font-mono text-xs">
+                    <span class="device-dot dot-off w-2 h-2 rounded-full bg-slate-500" id="fan-dot"></span>
+                    <span class="device-state state-off text-on-surface-variant font-bold" id="fan-label">TẮT</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Servo SG90: Vent Gate (GPIO 14) -->
+              <div class="device-row p-2.5 rounded-lg bg-surface-container-low/50 border border-white/5 flex items-center justify-between" id="vent-row">
+                <div class="device-info flex items-center gap-2.5">
+                  <span class="material-symbols-outlined text-info text-xl">air</span>
+                  <div>
+                    <div class="device-name font-bold text-xs text-white">Cửa Gió Servo (GPIO 14)</div>
+                    <div class="device-desc text-[10px] text-on-surface-variant font-mono">Servo PWM 50Hz · Mở 180° khi CO₂ &gt; 1000</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="toggle-vent-btn" class="actuator-btn btn-actuator-stitch px-2.5 py-1 rounded text-xs font-bold text-info border border-info/40 bg-info/10">Mở / Đóng</button>
+                  <div class="device-indicator flex items-center gap-1 font-mono text-xs">
+                    <span class="device-dot dot-off w-2 h-2 rounded-full bg-slate-500" id="vent-dot"></span>
+                    <span class="device-state state-off text-on-surface-variant font-bold" id="vent-label">ĐÓNG (0°)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- LED 5 & Neopixel Indicator -->
+              <div class="flex items-center justify-between p-2 rounded bg-surface-container-low/30 border border-white/5 text-xs font-mono">
+                <div class="flex items-center gap-2">
+                  <span class="device-dot dot-on" id="led5-dot"></span>
+                  <span id="led5-label" class="text-primary font-bold">SYSTEM SAFE (GPIO 7)</span>
+                </div>
+                <span class="badge-tag text-[10px] px-2 py-0.5 rounded bg-info/10 text-info border border-info/30" id="neopixel-badge">❇️ CYAN NORMAL</span>
+              </div>
+            </div>
+
+            <!-- BẢNG TRẠNG THÁI THIẾT BỊ KẾT NỐI -->
+            <div class="mt-4 pt-3 border-t border-white/10">
+              <div class="card-header flex justify-between items-center mb-2">
+                <div class="card-title text-xs font-bold flex items-center gap-1 text-white">
+                  <span>🔌</span> Trạng Thái Thiết Bị Kết Nối
+                </div>
+                <span class="status-count-badge text-[10px] font-mono px-2 py-0.5 rounded bg-warning/15 text-warning" id="devices-online-count">1/4 Online</span>
+              </div>
+
+              <div class="device-status-grid grid grid-cols-2 gap-2 text-xs font-mono">
+                <div class="device-status-card p-2 rounded bg-surface-container-low/60 border border-white/5" id="dev-esp32">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="dev-name font-bold text-white">📡 ESP32</span>
+                    <span class="device-dot dot-off" id="esp32-net-dot"></span>
+                  </div>
+                  <div class="dev-details text-[10px] text-on-surface-variant">
+                    <div id="esp-sensor-val">Chưa nhận packet</div>
+                    <span class="badge-offline text-[9px] text-danger" id="esp32-net-state">CHƯA KẾT NỐI</span>
+                  </div>
+                </div>
+
+                <div class="device-status-card p-2 rounded bg-surface-container-low/60 border border-white/5" id="dev-camera">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="dev-name font-bold text-white">📹 Webcam</span>
+                    <span class="device-dot dot-off" id="cam-net-dot"></span>
+                  </div>
+                  <div class="dev-details text-[10px] text-on-surface-variant">
+                    <div id="cam-stream-val">USB Webcam</div>
+                    <span class="badge-offline text-[9px] text-danger" id="cam-net-state">CHƯA CẮM CAM</span>
+                  </div>
+                </div>
+
+                <div class="device-status-card p-2 rounded bg-surface-container-low/60 border border-white/5" id="dev-jetson">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="dev-name font-bold text-white">🧠 Jetson AI</span>
+                    <span class="device-dot dot-on" id="jetson-net-dot"></span>
+                  </div>
+                  <div class="dev-details text-[10px] text-on-surface-variant">
+                    <div id="jetson-ai-val">Moondream</div>
+                    <span class="badge-online text-[9px] text-primary" id="jetson-net-state">ONLINE</span>
+                  </div>
+                </div>
+
+                <div class="device-status-card p-2 rounded bg-surface-container-low/60 border border-white/5" id="dev-firebase">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="dev-name font-bold text-white">🔥 Firebase</span>
+                    <span class="device-dot dot-on" id="firebase-net-dot"></span>
+                  </div>
+                  <div class="dev-details text-[10px] text-on-surface-variant">
+                    <div id="firebase-sync-val">Realtime DB</div>
+                    <span class="badge-online text-[9px] text-primary" id="firebase-net-state">ĐỒNG BỘ</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Last Sync Footer -->
+              <div class="last-updated-row mt-3 text-[11px] font-mono text-on-surface-variant flex justify-between">
+                <span>Đồng bộ gần nhất:</span>
+                <span id="last-updated" class="text-white">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 5: AI INFERENCE LOG HISTORY -->
+          <div class="card glass-panel rounded-xl p-4 md:p-5" id="ai-log-card">
+            <div class="card-header flex justify-between items-center mb-3">
+              <div class="card-title font-bold text-base flex items-center gap-2 text-white">
+                <span class="material-symbols-outlined text-primary text-xl">history</span>
+                Nhật Ký Nhận Diện Vision AI
+              </div>
+            </div>
+            <div class="ai-log-container overflow-x-auto max-h-[220px] overflow-y-auto">
+              <table class="ai-log-table w-full text-left font-mono text-xs">
+                <thead>
+                  <tr class="border-b border-white/10 text-on-surface-variant text-[10px]">
+                    <th class="pb-2">Thời gian</th>
+                    <th class="pb-2">Kích cỡ</th>
+                    <th class="pb-2">Độ tin cậy</th>
+                    <th class="pb-2">Ảnh</th>
+                  </tr>
+                </thead>
+                <tbody id="ai-log-body" class="divide-y divide-white/5">
+                  <tr>
+                    <td colspan="4" class="text-center text-on-surface-variant py-4">Đang tải dữ liệu lịch sử...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ======================================================
+         TAB 2: DEEP TEMPERATURE & HUMIDITY ANALYTICS
+         ====================================================== -->
+    <div id="tab-analytics" class="tab-content hidden">
+      <div id="analytics-layout" class="flex flex-col gap-6">
+
+        <!-- ANALYTICS TOP HERO SUMMARY CARDS -->
+        <div class="analytics-hero-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Widget 1: EHS -->
+          <div class="card glass-panel rounded-xl p-4">
+            <div class="analytics-widget-header text-xs text-on-surface-variant flex items-center gap-1.5 mb-2 font-mono">
+              <span>🛡️</span> <span>Điểm Môi Trường (EHS)</span>
+            </div>
+            <div class="widget-main-value font-mono text-3xl font-extrabold text-primary mb-1" id="analytics-ehs-val">95<span class="text-sm font-normal">%</span></div>
+            <div class="widget-status-tag tag-success text-xs font-mono text-primary font-bold" id="analytics-ehs-tag">Xuất Sắc (Optimal)</div>
+            <div class="widget-subtext text-[11px] text-on-surface-variant mt-2">Đánh giá tổng hợp độ ổn định môi trường nuôi trồng</div>
+          </div>
+
+          <!-- Widget 2: VPD -->
+          <div class="card glass-panel rounded-xl p-4">
+            <div class="analytics-widget-header text-xs text-on-surface-variant flex items-center gap-1.5 mb-2 font-mono">
+              <span>💧</span> <span>Chỉ Số Thấm Hơi VPD</span>
+            </div>
+            <div class="widget-main-value font-mono text-3xl font-extrabold text-info mb-1" id="analytics-vpd-val">0.45 <span class="text-sm font-normal">kPa</span></div>
+            <div class="widget-status-tag tag-success text-xs font-mono text-info font-bold" id="analytics-vpd-tag">Vùng Tối Ưu (0.3 - 0.8 kPa)</div>
+            <div class="widget-subtext text-[11px] text-on-surface-variant mt-2">Đo khả năng trao đổi chất &amp; thoát hơi nước</div>
+          </div>
+
+          <!-- Widget 3: Growth Zone -->
+          <div class="card glass-panel rounded-xl p-4">
+            <div class="analytics-widget-header text-xs text-on-surface-variant flex items-center gap-1.5 mb-2 font-mono">
+              <span>🟢</span> <span>Vùng Sinh Trưởng</span>
+            </div>
+            <div class="widget-zone-name font-bold text-lg text-primary mb-1" id="analytics-zone-name">Vùng Tối Ưu (Optimal)</div>
+            <div class="widget-subtext text-xs text-on-surface-variant" id="analytics-zone-desc">Nấm phát triển tối đa, tai nấm to, chất lượng cao.</div>
+          </div>
+
+          <!-- Widget 4: Forecast -->
+          <div class="card glass-panel rounded-xl p-4">
+            <div class="analytics-widget-header text-xs text-on-surface-variant flex items-center gap-1.5 mb-2 font-mono">
+              <span>⏳</span> <span>Dự Báo Thu Hoạch</span>
+            </div>
+            <div class="widget-main-value font-mono text-3xl font-extrabold text-warning mb-1" id="analytics-harvest-countdown">~18 <span class="text-sm font-normal">Giờ</span></div>
+            <div class="widget-status-tag tag-info text-xs font-mono text-warning font-bold">Tốc Độ Phát Triển: Nhanh</div>
+            <div class="widget-subtext text-[11px] text-on-surface-variant mt-2">Kết hợp chuỗi chu kỳ Nhiệt - Ẩm &amp; Vision AI</div>
+          </div>
+        </div>
+
+        <!-- ANALYTICS ROW 2: VPD FORMULA & RECOMMENDATIONS -->
+        <div class="analytics-two-col grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          <!-- Card 1: VPD Formula -->
+          <div class="card glass-panel rounded-xl p-5">
+            <div class="card-header mb-4">
+              <div class="card-title font-bold text-base flex items-center gap-2 text-white">
+                <span class="material-symbols-outlined text-primary text-xl">functions</span>
+                Công Thức &amp; Thông Số Áp Suất Hơi Nước VPD
+              </div>
+            </div>
+
+            <div class="vpd-formula-box bg-surface-container-low/80 border border-primary/30 rounded-lg p-4 text-center font-mono mb-4">
+              <div class="text-lg md:text-xl font-bold text-primary mb-2">
+                $$\text{VPD} = VP_{\text{sat}}(T) \times \left(1 - \frac{RH}{100}\right)$$
+              </div>
+              <div class="text-xs text-on-surface-variant font-main">
+                Trong đó: <strong class="text-info">VPD</strong> là áp suất hơi hụt (kPa), <strong class="text-purple-300">VP<sub>sat</sub>(T)</strong> là áp suất hơi bão hòa, và <strong class="text-primary">RH</strong> là độ ẩm (%).
+              </div>
+            </div>
+
+            <div class="vpd-calc-grid grid grid-cols-3 gap-3 font-mono text-center mb-4">
+              <div class="calc-item p-2.5 rounded bg-surface-container-low border border-white/5">
+                <div class="calc-label text-[10px] text-on-surface-variant">VP_sat (Bão hòa)</div>
+                <div class="calc-val text-sm font-bold text-white mt-1" id="calc-vpsat">0.90 kPa</div>
+              </div>
+              <div class="calc-item p-2.5 rounded bg-surface-container-low border border-white/5">
+                <div class="calc-label text-[10px] text-on-surface-variant">VP_act (Thực tế)</div>
+                <div class="calc-val text-sm font-bold text-white mt-1" id="calc-vpact">0.45 kPa</div>
+              </div>
+              <div class="calc-item highlight p-2.5 rounded bg-primary/10 border border-primary/30">
+                <div class="calc-label text-[10px] text-primary">Chênh lệch VPD</div>
+                <div class="calc-val text-sm font-bold text-primary mt-1" id="calc-vpd">0.45 kPa</div>
+              </div>
+            </div>
+
+            <!-- VPD Meter -->
+            <div class="vpd-meter-container">
+              <div class="vpd-meter-title text-xs font-mono text-on-surface-variant mb-2">Thước Đo VPD Sinh Học:</div>
+              <div class="vpd-meter-bar flex h-5 rounded overflow-hidden text-[10px] font-mono font-bold text-center leading-5">
+                <div class="vpd-segment seg-low w-1/4 bg-blue-600 text-white" title="Bão hòa ẩm (< 0.3 kPa)">Thối Nhũn</div>
+                <div class="vpd-segment seg-opt w-1/4 bg-emerald-500 text-black" title="Tối ưu (0.3 - 0.8 kPa)">Tối Ưu</div>
+                <div class="vpd-segment seg-warn w-1/4 bg-amber-500 text-black" title="Khô hạn nhẹ (0.8 - 1.2 kPa)">Khô Nhẹ</div>
+                <div class="vpd-segment seg-danger w-1/4 bg-red-600 text-white" title="Khô hạn nặng (> 1.2 kPa)">Cháy Tơ</div>
+              </div>
+              <div class="vpd-pointer font-bold text-primary text-center text-xs mt-1" id="vpd-pointer" style="left: 45%;">▲</div>
+            </div>
+          </div>
+
+          <!-- Card 2: Recommendations -->
+          <div class="card glass-panel rounded-xl p-5">
+            <div class="card-header mb-4">
+              <div class="card-title font-bold text-base flex items-center gap-2 text-white">
+                <span class="material-symbols-outlined text-warning text-xl">lightbulb</span>
+                Khuyến Nghị Vận Hành &amp; Cảnh Báo Bệnh Nấm
+              </div>
+            </div>
+
+            <div class="advice-list flex flex-col gap-3 text-xs">
+              <div class="advice-item p-3 rounded-lg bg-surface-container-low/50 border border-white/5 flex gap-3" id="advice-irrigation">
+                <div class="advice-icon text-2xl">💦</div>
+                <div>
+                  <div class="advice-title font-bold text-white mb-0.5">Chế Độ Phun Sương Tự Động</div>
+                  <div class="advice-desc text-on-surface-variant" id="advice-irrigation-desc">Môi trường đạt chuẩn tối ưu. Không cần tăng cường phun sương.</div>
+                </div>
+              </div>
+
+              <div class="advice-item p-3 rounded-lg bg-surface-container-low/50 border border-white/5 flex gap-3" id="advice-ventilation">
+                <div class="advice-icon text-2xl">🌀</div>
+                <div>
+                  <div class="advice-title font-bold text-white mb-0.5">Thông Gió &amp; Ngừa Mốc Xanh</div>
+                  <div class="advice-desc text-on-surface-variant" id="advice-ventilation-desc">Độ ẩm an toàn (&lt; 90%). Không phát hiện rủi ro đọng nước thối gốc.</div>
+                </div>
+              </div>
+
+              <div class="advice-item p-3 rounded-lg bg-surface-container-low/50 border border-white/5 flex gap-3" id="advice-thermal">
+                <div class="advice-icon text-2xl">🌡️</div>
+                <div>
+                  <div class="advice-title font-bold text-white mb-0.5">Biến Động Nhiệt Ngày/Đêm (Diurnal Range)</div>
+                  <div class="advice-desc text-on-surface-variant" id="advice-thermal-desc">Biên độ nhiệt trong ngày ổn định (&lt; 4°C). Nấm phát triển đều.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ANALYTICS ROW 3: 24-HOUR TREND CHART -->
+        <div class="card glass-panel rounded-xl p-5" id="analytics-chart-card">
+          <div class="card-header mb-3">
+            <div class="card-title font-bold text-base flex items-center gap-2 text-white">
+              <span class="material-symbols-outlined text-info text-xl">show_chart</span>
+              Biểu Đồ Phân Tích Xu Hướng VPD &amp; Nhiệt - Ẩm 24 Giờ Qua
+            </div>
+          </div>
+          <div class="chart-wrap-large relative w-full h-[320px]">
+            <canvas id="vpd-analytics-chart"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ======================================================
+         TAB 3: SƠ ĐỒ CHÂN ESP32-S3 & NODE DIAGNOSTICS
+         ====================================================== -->
+    <div id="tab-nodes" class="tab-content hidden">
+      <div class="flex flex-col gap-6">
+
+        <!-- NODE HERO OVERVIEW -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Card 1: ESP32-S3 Master Node -->
+          <div class="card glass-panel rounded-xl p-5 border-l-4 border-l-primary">
+            <div class="card-header flex justify-between items-center mb-3">
+              <div class="card-title font-bold text-base flex items-center gap-2 text-white">
+                <span class="material-symbols-outlined text-primary text-xl">cell_tower</span>
+                Master Edge Node: ESP32-S3 DevKitC-1
+              </div>
+              <span class="status-count-badge text-xs font-mono px-2 py-0.5 rounded bg-primary/15 text-primary">● ONLINE (BLE Direct)</span>
+            </div>
+            <div class="text-xs text-on-surface-variant space-y-1.5 font-mono">
+              <div>• <strong>Giao thức:</strong> Bluetooth Low Energy (BLE 5.0 Wireless)</div>
+              <div>• <strong>Truyền nhận:</strong> Cụm Cảm Biến &amp; Trạng Thái Actuator</div>
+              <div>• <strong>Nguồn cấp:</strong> Pin LiPo 1600mAh 3.7V + Mạch sạc IP2312</div>
+              <div>• <strong>Chẩn đoán GPIO 48:</strong> ❇️ Neopixel RGB Diagnostic Active</div>
+            </div>
+          </div>
+
+          <!-- Card 2: Jetson Orin Nano -->
+          <div class="card glass-panel rounded-xl p-5 border-l-4 border-l-info">
+            <div class="card-header flex justify-between items-center mb-3">
+              <div class="card-title font-bold text-base flex items-center gap-2 text-white">
+                <span class="material-symbols-outlined text-info text-xl">memory</span>
+                AI Gateway Station: Jetson Orin Nano
+              </div>
+              <span class="status-count-badge text-xs font-mono px-2 py-0.5 rounded bg-info/15 text-info">● ACTIVE (USB 192.168.55.1)</span>
+            </div>
+            <div class="text-xs text-on-surface-variant space-y-1.5 font-mono">
+              <div>• <strong>BLE Service:</strong> <code>ble_mqtt_bridge.service</code> Active</div>
+              <div>• <strong>Vision AI Server:</strong> Ollama Moondream (Port 11434)</div>
+              <div>• <strong>Firebase Cloud:</strong> Realtime Sync Engine</div>
+              <div>• <strong>Camera Input:</strong> USB Webcam (/dev/video0 - 640x480)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCHEMATIC PINOUT MAP TABLE -->
+        <div class="card glass-panel rounded-xl p-5">
+          <div class="card-header flex justify-between items-center mb-4">
+            <div class="card-title font-bold text-base flex items-center gap-2 text-white">
+              <span class="material-symbols-outlined text-warning text-xl">settings_input_component</span>
+              Bảng Ánh Xạ Sơ Đồ Chân Đối Nối (ESP32-S3 Hardware Pinout Map)
+            </div>
+            <span class="badge-tag text-xs font-mono px-2 py-0.5 rounded bg-primary/15 text-primary border border-primary/30">📋 Chuẩn Repo MinhTriTM/IOT.git</span>
+          </div>
+
+          <div class="zone-table-wrap overflow-x-auto">
+            <table class="zone-table w-full text-left font-mono text-xs">
+              <thead>
+                <tr class="border-b border-white/10 text-on-surface-variant">
+                  <th class="pb-3">Cổng GPIO</th>
+                  <th class="pb-3">Linh Kiện &amp; Cảm Biến</th>
+                  <th class="pb-3">Giao Tiếp</th>
+                  <th class="pb-3">Chức Năng &amp; Quy Tắc</th>
+                  <th class="pb-3 text-right">Trạng Thái Live</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-white/5 text-white">
+                <tr>
+                  <td class="py-2.5"><code class="text-primary">GPIO 4 / 6</code></td>
+                  <td class="py-2.5">🌡️ Cảm biến DHT22 / DHT11</td>
+                  <td class="py-2.5">1-Wire Protocol</td>
+                  <td class="py-2.5 text-on-surface-variant font-main">Đo Nhiệt độ (0-50°C) &amp; Độ ẩm (20-90%). Cảm biến chính G4.</td>
+                  <td class="py-2.5 text-right"><span class="badge-online text-primary">🟢 HOẠT ĐỘNG</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5"><code class="text-primary">GPIO 5</code></td>
+                  <td class="py-2.5">💨 Cảm biến Khí CO₂ MQ-135</td>
+                  <td class="py-2.5">Analog ADC1_CH4</td>
+                  <td class="py-2.5 text-on-surface-variant font-main">Đo nồng độ CO₂ (400-2000 ppm). Tự động mở cửa gió khi CO₂ &gt; 1000 ppm.</td>
+                  <td class="py-2.5 text-right"><span class="badge-online text-primary">🟢 HOẠT ĐỘNG</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5"><code class="text-primary">GPIO 7</code></td>
+                  <td class="py-2.5">🟢 LED 5 — System Safe OK</td>
+                  <td class="py-2.5">Digital Output</td>
+                  <td class="py-2.5 text-on-surface-variant font-main">Sáng xanh lá liên tục báo hiệu bo mạch an toàn.</td>
+                  <td class="py-2.5 text-right"><span class="badge-online text-primary">🟢 OK (SYSTEM SAFE)</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5"><code class="text-primary">GPIO 8 / 9</code></td>
+                  <td class="py-2.5">☀️ Cảm biến Ánh Sáng BH1750</td>
+                  <td class="py-2.5">I2C Bus (0x23)</td>
+                  <td class="py-2.5 text-on-surface-variant font-main">Đo cường độ ánh sáng Lux. Bật đèn khi Lux &lt; 400.</td>
+                  <td class="py-2.5 text-right"><span class="badge-online text-primary">🟢 HOẠT ĐỘNG</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5"><code class="text-primary">GPIO 14</code></td>
+                  <td class="py-2.5">🌀 Servo SG90 Cửa Gió</td>
+                  <td class="py-2.5">PWM 50Hz</td>
+                  <td class="py-2.5 text-on-surface-variant font-main">Điều khiển góc mở cửa gió thông thoáng nhà nấm (0° ➔ 180°).</td>
+                  <td class="py-2.5 text-right"><span class="badge-online text-primary" id="pin-g14-status">🟢 READY (0°)</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5"><code class="text-primary">GPIO 15</code></td>
+                  <td class="py-2.5">💦 Relay 1 — Máy Bơm Phun Sương</td>
+                  <td class="py-2.5">Digital Output</td>
+                  <td class="py-2.5 text-on-surface-variant font-main">Tự động kích hoạt khi Độ ẩm &lt; 70% hoặc Nhiệt độ &gt; 35°C.</td>
+                  <td class="py-2.5 text-right"><span class="badge-online text-primary" id="pin-g15-status">🟢 READY</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5"><code class="text-primary">GPIO 16</code></td>
+                  <td class="py-2.5">🔔 Relay 2 — Còi/Đèn Cảnh Báo</td>
+                  <td class="py-2.5">Digital Output</td>
+                  <td class="py-2.5 text-on-surface-variant font-main">Cảnh báo còi &amp; LED đỏ khi CO₂ &gt; 1000ppm hoặc Nấm LỚN.</td>
+                  <td class="py-2.5 text-right"><span class="badge-online text-primary" id="pin-g16-status">🟢 READY</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5"><code class="text-primary">GPIO 17</code></td>
+                  <td class="py-2.5">💡 Relay 3 — Đèn Quang Hợp</td>
+                  <td class="py-2.5">Digital Output</td>
+                  <td class="py-2.5 text-on-surface-variant font-main">Bật đèn quang hợp khi Ánh sáng BH1750 &lt; 400 Lux.</td>
+                  <td class="py-2.5 text-right"><span class="badge-online text-primary" id="pin-g17-status">🟢 READY</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5"><code class="text-primary">GPIO 18</code></td>
+                  <td class="py-2.5">🌀 Relay 4 — Quạt Mát</td>
+                  <td class="py-2.5">Digital Output</td>
+                  <td class="py-2.5 text-on-surface-variant font-main">Bật quạt giải nhiệt khi Nhiệt độ môi trường &gt; 31°C.</td>
+                  <td class="py-2.5 text-right"><span class="badge-online text-primary" id="pin-g18-status">🟢 READY</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5"><code class="text-primary">GPIO 48</code></td>
+                  <td class="py-2.5">🌈 Neopixel RGB LED Chẩn Đoán</td>
+                  <td class="py-2.5">Addressable RGB</td>
+                  <td class="py-2.5 text-on-surface-variant font-main">Chẩn đoán bo mạch: Cyan (Bình thường), Yellow (Cảnh báo), Red (Lỗi).</td>
+                  <td class="py-2.5 text-right"><span class="badge-online text-info">❇️ CYAN NORMAL</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ======================================================
+         TAB 4: NHẬT KÝ VIETGAP & CẢNH BÁO HỆ THỐNG
+         ====================================================== -->
+    <div id="tab-logs" class="tab-content hidden">
+      <div class="card glass-panel rounded-xl p-5">
+        <div class="card-header flex justify-between items-center mb-3">
+          <div class="card-title font-bold text-base flex items-center gap-2 text-white">
+            <span class="material-symbols-outlined text-primary text-xl">description</span>
+            Nhật Ký Vận Hành Vi Khí Hậu &amp; Chuẩn Xuất Báo Cáo VietGAP
+          </div>
+          <button id="export-vietgap-btn" class="bg-primary hover:bg-primary-bright text-on-primary font-bold rounded-md px-3 py-1.5 text-xs transition-all shadow-[0_0_12px_rgba(16,185,129,0.3)]">
+            📥 Xuất Báo Cáo VietGAP (CSV)
+          </button>
+        </div>
+
+        <div class="mb-4 text-xs text-on-surface-variant">
+          Toàn bộ lịch sử đo đạc vi khí hậu (Nhiệt độ, Độ ẩm, CO₂, Ánh sáng, VPD) và quyết định tự động của Decision Engine được tự động ghi vết để xuất báo cáo VietGAP.
+        </div>
+
+        <div class="zone-table-wrap overflow-x-auto">
+          <table class="zone-table w-full text-left font-mono text-xs">
+            <thead>
+              <tr class="border-b border-white/10 text-on-surface-variant">
+                <th class="pb-3">Mốc Thời Gian</th>
+                <th class="pb-3">Phân Loại Event</th>
+                <th class="pb-3">Thông Số Ghi Nhận</th>
+                <th class="pb-3">Tác Vụ Tự Động (Decision Engine)</th>
+                <th class="pb-3 text-right">Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody id="vietgap-log-body" class="divide-y divide-white/5 text-white">
+              <tr>
+                <td colspan="5" class="text-center text-on-surface-variant py-4">Đang cập nhật nhật ký thời gian thực...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ======================================================
+       FOOTER
+       ====================================================== -->
+  <footer role="contentinfo" class="text-center py-6 px-4 text-xs font-mono text-on-surface-variant border-t border-white/10 mt-8">
+    <p>
+      🌱 Edge AI &amp; IoT System — Giám Sát Sinh Trưởng Nấm Linh Chi / Nấm Rơm ·
+      Jetson Orin Nano · ESP32 · Ollama Moondream LLM ·
+      <a href="https://github.com/giahung25/IoT_project" target="_blank" rel="noopener" class="text-primary hover:underline">GitHub Repository</a>
+    </p>
+  </footer>
+
+  <!-- ======================================================
+       JAVASCRIPT MODULES
+       ====================================================== -->
+  <script src="js/mock-data.js"></script>
+  <script src="js/gauges.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/dashboard.js?v=14.0"></script>
+
+</body>
+</html>

@@ -3,7 +3,7 @@
 # User data & reports
 data/
 reports/
-WEB_IOT/
+WEB_IOT/.firebase/
 
 # Python virtual environment
 .venv/
@@ -23,6 +23,7 @@ __pycache__/
 latest.jpg
 backend/latest.jpg
 backend/captures/
+WEB_IOT/dashboard/static/images/history/
 *.log
 
 # OS generated files
