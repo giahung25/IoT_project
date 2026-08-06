@@ -515,3 +515,24 @@ Tệp tin này ghi lại các sự cố kỹ thuật gặp phải trong quá tr�
   - [WEB_IOT/dashboard/index.html](file:///home/GiaHung/Projects/IoT_project/WEB_IOT/dashboard/index.html): Thêm script MathJax 3 CDN vào `<head>` và bao bọc khung công thức VPD đẹp mắt.
 - **Kết quả xác minh:**
   - Công thức VPD và các ký hiệu toán học render sắc nét trên `https://agrishroom-edge.web.app`.
+
+---
+
+### 📌 [2026-08-06 16:40] Tích Hợp Trực Tiếp Mã Nguồn Web Frontend (`WEB_IOT/`) Vào Repository Chính (`IoT_project`)
+- **Mô tả công việc:** Đưa toàn bộ phân hệ mã nguồn Web Frontend (`WEB_IOT/`) vào quản lý phiên bản trực tiếp trong repository chính `IoT_project` thay vì bỏ qua trong `.gitignore` hoặc sử dụng repository rời.
+- **Chi Tiết Thực Hiện:**
+  1. Xóa bỏ dòng `WEB_IOT/` trong [.gitignore](file:///home/GiaHung/Projects/IoT_project/.gitignore), chỉ giữ lại việc ignore thư mục tạm `WEB_IOT/.firebase/` và thư mục ảnh lịch sử `WEB_IOT/dashboard/static/images/history/`.
+  2. Gỡ bỏ tệp tin quản lý Git rời `WEB_IOT/.git` (`rm -rf WEB_IOT/.git`).
+  3. Staging và commit toàn bộ mã nguồn `WEB_IOT/` (HTML, CSS, JS, Firebase config, Backend script) trực tiếp vào cây mã nguồn `IoT_project`.
+- **Lệnh đã thực thi:**
+  ```bash
+  rm -rf WEB_IOT/.git
+  git add .gitignore WEB_IOT
+  git commit -m "feat(web): integrate WEB_IOT web frontend directly into IoT_project repository"
+  git push origin main
+  git push upstream main:feature/edge-ai-iot-monitoring
+  ```
+- **Tệp tin đã thay đổi:**
+  - [.gitignore](file:///home/GiaHung/Projects/IoT_project/.gitignore): Cập nhật quy tắc ignore cho `WEB_IOT`.
+  - [`WEB_IOT/`](file:///home/GiaHung/Projects/IoT_project/WEB_IOT): Thêm toàn bộ mã nguồn phân hệ Web Dashboard vào Git.
+- **Kết quả xác minh:** Push thành công 100% lên cả 2 remote: `https://github.com/giahung25/IoT_project.git` (branch `main`) và `https://github.com/MinhTriTM/IOT.git` (branch `feature/edge-ai-iot-monitoring`).
